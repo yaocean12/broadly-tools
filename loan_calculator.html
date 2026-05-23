@@ -1045,6 +1045,9 @@
             const isClosed =
                 els.invDrawer.classList.contains("translate-x-full");
             if (isClosed) {
+                // 觸發 GA4 開啟投資決策模組事件
+                gtag('event', 'open_investment_drawer');
+
                 els.invDrawer.classList.remove("translate-x-full");
                 els.overlay.classList.remove("hidden");
                 setTimeout(
