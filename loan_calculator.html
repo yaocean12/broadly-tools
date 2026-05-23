@@ -1081,6 +1081,9 @@
                 els.shareUrlConfigInput.value = shareUrl;
                 els.shareUrlPureInput.value = baseUrl;
 
+                // 觸發 GA4 開啟分享視窗事件
+                gtag('event', 'click_share_button');
+
                 els.shareModal.classList.remove("hidden");
                 els.overlay.classList.remove("hidden");
                 setTimeout(() => {
@@ -1102,6 +1105,14 @@
 
         // 複製帶有參數的網址
         els.copyUrlConfigBtn.addEventListener("click", () => {
+            // 觸發 GA4 複製帶參數連結事件
+            gtag('event', 'copy_share_link', {
+                'share_type': 'config_url',
+                'loan_amount': parseFloat(els.inputAmount.value) || 0,
+                'interest_rate': parseFloat(els.inputRate.value) || 0,
+                'expected_yield': parseFloat(els.sliderInvRate.value) || 0
+            });
+
             els.shareUrlConfigInput.select();
             navigator.clipboard
                 .writeText(els.shareUrlConfigInput.value)
@@ -1135,6 +1146,11 @@
 
         // 複製純淨網址
         els.copyUrlPureBtn.addEventListener("click", () => {
+            // 觸發 GA4 複製純淨連結事件
+            gtag('event', 'copy_share_link', {
+                'share_type': 'pure_url'
+            });
+
             els.shareUrlPureInput.select();
             navigator.clipboard
                 .writeText(els.shareUrlPureInput.value)
@@ -1168,6 +1184,16 @@
 
         // 圖片下載邏輯
         els.btnDownloadReport.addEventListener("click", async () => {
+            // 觸發 GA4 下載事件
+            gtag('event', 'click_download_report', {
+                'loan_amount': parseFloat(els.inputAmount.value) || 0,
+                'interest_rate': parseFloat(els.inputRate.value) || 0,
+                'initial_term': parseInt(els.sliderInitialTerm.value) || 0,
+                'lock_in_months': parseInt(els.selectLockIn.value) || 0,
+                'expected_yield': parseFloat(els.sliderInvRate.value) || 0,
+                'dca_amount': parseFloat(els.inputDcaAmount.value) || 0
+            });
+
             // 變更按鈕狀態
             const originalText = els.btnDownloadReport.innerHTML;
             els.btnDownloadReport.innerHTML =
