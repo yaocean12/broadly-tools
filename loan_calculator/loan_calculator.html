@@ -1,0 +1,1764 @@
+<!doctype html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>信用貸款計算機 - 獲取資金的成本一目瞭然</title>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- 引入 html2canvas 供圖片下載使用 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ["Inter", "Noto Sans TC", "sans-serif"],
+                    },
+                    colors: {
+                        brand: {
+                            50: "#fcfbfa",
+                            100: "#ddc9b4",
+                            500: "#bcac9b",
+                            600: "#7a6c5d",
+                            700: "#635649",
+                            900: "#2a3d45",
+                        },
+                        accent: {
+                            500: "#c17c74",
+                            600: "#aa645c",
+                        },
+                        slate: {
+                            50: "#fdfcfb",
+                            100: "#f7f5f2",
+                            200: "#f0ece6",
+                            300: "#e4ded6",
+                            400: "#bcac9b",
+                            500: "#7a6c5d",
+                            600: "#5d5145",
+                            700: "#44392e",
+                            800: "#2a3d45",
+                            900: "#1e2c32",
+                        },
+                        blue: {
+                            50: "#fbfaf8",
+                            100: "#f7f5f2",
+                            200: "#ddc9b4",
+                            500: "#7a6c5d",
+                            600: "#2a3d45",
+                            700: "#1e2c32",
+                        },
+                        rose: {
+                            50: "#fcf8f7",
+                            500: "#c17c74",
+                            600: "#aa645c",
+                        },
+                        emerald: {
+                            50: "#f6f8f8",
+                            500: "#7a6c5d",
+                            600: "#2a3d45",
+                        }
+                    },
+                },
+            },
+        };
+    </script>
+    <style>
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        input[type="number"] {
+            -moz-appearance: textfield;
+            appearance: textfield;
+        }
+
+        .range-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 6px;
+            background: #ddc9b4;
+            border-radius: 9999px;
+            outline: none;
+        }
+
+        .range-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #7a6c5d;
+            cursor: pointer;
+            transition: all 0.15s ease-in-out;
+        }
+
+        .range-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        /* 側邊欄專用平滑過渡 */
+        .drawer-transition {
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+    </style>
+</head>
+
+<body
+    class="bg-slate-50 text-slate-800 lg:h-screen lg:overflow-hidden p-3 lg:p-4 flex flex-col overflow-x-hidden font-sans">
+    <!-- 投資決策模組喚醒按鈕 -->
+    <button id="toggleDrawerBtn"
+        class="fixed right-0 top-1/2 -translate-y-1/2 bg-slate-800 text-white py-4 px-2 rounded-l-xl shadow-2xl hover:bg-slate-700 transition-colors z-30 flex flex-col items-center gap-2 border-y border-l border-slate-600 group">
+        <svg class="w-6 h-6 text-accent-500 group-hover:scale-110 transition-transform" fill="none"
+            stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6">
+            </path>
+        </svg>
+        <span class="font-bold tracking-widest mt-1 text-sm" style="writing-mode: vertical-rl">投資決策模組</span>
+    </button>
+
+    <!-- 背景遮罩 (共用) -->
+    <div id="overlay"
+        class="fixed inset-0 bg-slate-900/60 z-40 hidden transition-opacity duration-300 opacity-0 backdrop-blur-sm">
+    </div>
+
+    <!-- 分享網址 Modal -->
+    <div id="shareModal"
+        class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-2xl z-50 p-6 w-[90%] max-w-md hidden opacity-0 transition-opacity duration-300">
+        <div class="flex justify-between items-center mb-3">
+            <h3 class="text-base font-bold text-slate-800 flex items-center">
+                <svg class="w-5 h-5 mr-2 text-brand-500 animate-pulse" fill="none" stroke="currentColor"
+                    viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z">
+                    </path>
+                </svg>
+                分享信用貸款計算機
+            </h3>
+            <button id="closeShareBtn" class="text-slate-400 hover:text-slate-600 p-1">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                    </path>
+                </svg>
+            </button>
+        </div>
+
+        <p class="text-xs text-slate-500 mb-4">
+            您可以選擇分享當前自訂的貸款合約數值，或是分享乾淨的初始計算機：
+        </p>
+
+        <div class="space-y-4">
+            <!-- 方案 A：帶入參數 -->
+            <div class="space-y-1.5">
+                <label class="block text-xs font-bold text-slate-700">📋 分享這次設定結果 (帶入您設定的合約數值)</label>
+                <div class="flex items-center gap-2">
+                    <input type="text" id="shareUrlConfigInput"
+                        class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-600 outline-none"
+                        readonly />
+                    <button id="copyUrlConfigBtn"
+                        class="bg-brand-600 hover:bg-brand-700 text-white px-3 py-2 rounded-lg text-xs font-bold transition whitespace-nowrap shadow-sm">
+                        複製網址
+                    </button>
+                </div>
+            </div>
+
+            <!-- 方案 B：純淨計算機 -->
+            <div class="space-y-1.5">
+                <label class="block text-xs font-bold text-slate-700">✨ 單純分享這個計算機 (乾淨初始版面)</label>
+                <div class="flex items-center gap-2">
+                    <input type="text" id="shareUrlPureInput"
+                        class="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-600 outline-none"
+                        readonly />
+                    <button id="copyUrlPureBtn"
+                        class="bg-slate-500 hover:bg-slate-600 text-white px-3 py-2 rounded-lg text-xs font-bold transition whitespace-nowrap shadow-sm">
+                        複製網址
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 側邊抽屜 (投資決策模組) -->
+    <div id="invDrawer"
+        class="fixed right-0 top-0 h-full w-full max-w-sm md:max-w-md bg-white shadow-2xl z-50 transform translate-x-full drawer-transition flex flex-col">
+        <!-- Drawer Header -->
+        <div
+            class="px-5 py-3 border-b border-slate-100 flex justify-between items-center bg-slate-800 text-white sticky top-0 z-30 shadow-md">
+            <h2 class="text-lg font-bold flex items-center">
+                <svg class="w-5 h-5 mr-2 text-accent-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z">
+                    </path>
+                </svg>
+                投資決策模擬
+            </h2>
+            <button id="closeDrawerBtn" class="text-slate-400 hover:text-white p-2 transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                    </path>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Drawer Body -->
+        <div class="p-5 overflow-y-auto flex-1 space-y-6">
+            <!-- 全局參數控制 -->
+            <div class="bg-slate-100 p-4 rounded-xl border border-slate-200 shadow-inner">
+                <div class="flex justify-between mb-2">
+                    <label class="block font-medium text-slate-800">市場預期年化報酬率</label>
+                    <span id="invRateDisplay" class="text-lg font-bold text-brand-600">8%</span>
+                </div>
+                <input type="range" id="sliderInvRate" min="-100" max="100" step="1" value="8" class="range-slider" />
+                <div class="flex justify-between text-xs text-slate-500 mt-2 font-medium">
+                    <span>-100% (極悲觀)</span>
+                    <span>+100% (極樂觀)</span>
+                </div>
+                <div
+                    class="mt-3 text-xs text-slate-500 flex justify-between bg-white p-2 rounded border border-slate-200">
+                    <span>投資期間：<span id="invDuration" class="font-bold text-brand-600">0 年</span></span>
+                    <span>(依左側信貸總年限)</span>
+                </div>
+            </div>
+
+            <!-- 策略一：信貸單筆投入 -->
+            <div
+                class="border border-blue-200 rounded-xl overflow-hidden shadow-sm bg-white flex flex-col relative z-10">
+                <div class="bg-blue-50 p-3 border-b border-blue-100 font-bold text-blue-800 flex items-center">
+                    <span
+                        class="bg-blue-200 text-blue-800 w-6 h-6 rounded-full flex items-center justify-center text-xs mr-2">1</span>
+                    策略一：信貸單筆投入 (開槓桿)
+                </div>
+                <div class="p-4 flex flex-col gap-4 flex-1">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-slate-50 rounded p-2 border border-slate-100">
+                            <div class="text-xs text-slate-500 mb-1">
+                                投入本金
+                            </div>
+                            <div class="text-sm font-semibold" id="invPrincipal">
+                                $0
+                            </div>
+                        </div>
+                        <div class="bg-rose-50 rounded p-2 border border-rose-100">
+                            <div class="text-xs text-rose-500 mb-1">
+                                總成本(利息+手續費)
+                            </div>
+                            <div class="text-sm font-semibold text-rose-600" id="invCost">
+                                $0
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-blue-50/50 rounded p-2 border border-blue-100">
+                        <div class="text-xs text-slate-500 mb-1">
+                            投資期末帳面總值
+                        </div>
+                        <div class="text-base font-semibold text-blue-800" id="invFutureValue">
+                            $0
+                        </div>
+                        <div class="text-[11px] text-blue-700 mt-1.5 bg-blue-100/50 p-1.5 rounded border border-blue-200"
+                            id="invCumulativeRateInfo">
+                            <!-- 累積報酬率說明將在此處動態生成 -->
+                        </div>
+                    </div>
+
+                    <div class="border-l-4 border-l-blue-500 pl-4 relative group">
+                        <p class="text-xs text-slate-500 mb-1">
+                            結清本息後實拿淨利
+                        </p>
+                        <div class="flex items-baseline gap-2">
+                            <p class="text-2xl font-bold transition-colors tracking-tight text-blue-600"
+                                id="invNetProfit">
+                                $0
+                            </p>
+                            <span class="text-xs font-bold text-blue-500" id="invReturnRate">0%</span>
+                        </div>
+                    </div>
+
+                    <!-- 策略一：可留存資金 -->
+                    <div class="bg-slate-800 text-white rounded-xl p-4 shadow-inner relative overflow-hidden">
+                        <div class="absolute -right-4 -top-4 w-16 h-16 bg-blue-500 opacity-20 rounded-full blur-xl">
+                        </div>
+                        <p class="text-xs text-slate-300 mb-1 relative z-10">
+                            期末可留在市場的資金 (淨資產)
+                        </p>
+                        <p class="text-3xl font-black text-blue-400 tracking-tight relative z-10" id="invRetainedFunds">
+                            $0
+                        </p>
+                        <p class="text-[11px] text-slate-400 mt-1 relative z-10">
+                            因為必須抽回資金清償債務，僅剩實拿淨利可留存。
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 策略二：穩健定期定額 -->
+            <div
+                class="border border-emerald-200 rounded-xl overflow-hidden shadow-sm bg-white flex flex-col relative z-20">
+                <div class="bg-emerald-50 p-3 border-b border-emerald-100 font-bold text-emerald-800 flex items-center">
+                    <span
+                        class="bg-emerald-200 text-emerald-800 w-6 h-6 rounded-full flex items-center justify-center text-xs mr-2">2</span>
+                    策略二：穩健定期定額 (零借貸)
+                </div>
+                <div class="p-4 flex flex-col gap-4 flex-1">
+                    <div>
+                        <div class="flex justify-between mb-1">
+                            <label class="block text-xs font-medium text-slate-700">每月投入金額 (1千 ~ 10萬)</label>
+                        </div>
+                        <input type="number" id="inputDcaAmount" value="15000" min="1000" max="100000" step="1000"
+                            class="w-full p-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 mb-2 text-sm" />
+                        <input type="range" id="sliderDcaAmount" min="1000" max="100000" step="1000" value="15000"
+                            class="range-slider" />
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-slate-50 rounded p-2 border border-slate-100">
+                            <div class="text-xs text-slate-500 mb-1">
+                                累積投入本金
+                            </div>
+                            <div class="text-sm font-semibold" id="dcaPrincipal">
+                                $0
+                            </div>
+                        </div>
+                        <div class="bg-emerald-50/50 rounded p-2 border border-emerald-100 group relative">
+                            <div class="text-xs text-slate-500 mb-1 flex items-center">
+                                總純獲利
+                                <svg class="w-3.5 h-3.5 ml-1 text-slate-400 cursor-help group-hover:text-emerald-600 transition-colors"
+                                    fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
+                                    </path>
+                                </svg>
+                            </div>
+                            <!-- Tooltip -->
+                            <div
+                                class="absolute right-0 bottom-full mb-2 w-56 p-2 bg-slate-800 text-white text-xs rounded shadow-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-30">
+                                <strong>為什麼低於年化報酬率？</strong><br />因為資金是逐月分批投入，只有第一個月的錢跑滿完整年期。此比率為：(總純獲利
+                                ÷ 總累積本金)。
+                            </div>
+                            <div class="flex items-baseline gap-2">
+                                <p class="text-base font-bold text-emerald-600" id="dcaNetProfit">
+                                    $0
+                                </p>
+                                <span class="text-xs font-bold text-emerald-500" id="dcaReturnRate">0%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 策略二：可留存資金 -->
+                    <div
+                        class="bg-slate-800 text-white rounded-xl p-4 shadow-xl relative overflow-hidden ring-2 ring-emerald-500 ring-offset-2 ring-offset-white">
+                        <div class="absolute -right-4 -top-4 w-24 h-24 bg-emerald-500 opacity-30 rounded-full blur-xl">
+                        </div>
+                        <p class="text-xs text-emerald-300 mb-1 relative z-10 flex items-center font-medium">
+                            期末可留在市場的資金 (總資產)
+                        </p>
+                        <p class="text-5xl font-black text-emerald-400 tracking-tight relative z-10 my-2"
+                            id="dcaRetainedFunds">
+                            $0
+                        </p>
+                        <p class="text-[11px] text-white relative z-10 leading-relaxed opacity-90">
+                            <span class="text-emerald-400">✔️</span> 無債務壓力<br />
+                            <span class="text-emerald-400">✔️</span> 本金與獲利全數完整保留於帳戶中，持續享有市場長期的複利效應。
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 警語區塊 -->
+            <div class="pt-2">
+                <div
+                    class="bg-amber-50 text-amber-800 p-4 rounded-xl text-xs leading-relaxed border border-amber-100 shadow-sm relative z-10">
+                    <span class="font-bold flex items-center mb-1 text-sm">
+                        <svg class="w-4 h-4 mr-1 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z">
+                            </path>
+                        </svg>
+                        風險警語
+                    </span>
+                    本計算結果不構成投資建議，信用貸款投資屬具風險之財務槓桿。股市實際報酬率存在波動（包含虧損本金之可能），請務必評估自身財務現金流狀況與風險承受度後再做決策。
+                </div>
+            </div>
+        </div>
+
+        <!-- Drawer Footer (Sticky Actions) -->
+        <div class="p-4 border-t border-slate-100 bg-slate-50 flex gap-2 shrink-0 shadow-inner">
+            <button id="btnDownloadReport"
+                class="flex-1 flex items-center justify-center gap-1.5 bg-white border-2 border-brand-500 text-brand-600 hover:bg-brand-50 px-3 py-2 rounded-xl text-sm font-bold transition-colors shadow-sm group">
+                <svg class="w-4 h-4 group-hover:-translate-y-0.5 transition-transform" fill="none" stroke="currentColor"
+                    viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                </svg>
+                下載模擬結果
+            </button>
+            <button id="btnShare"
+                class="flex-1 flex items-center justify-center gap-1.5 bg-brand-600 hover:bg-brand-700 text-white px-3 py-2 rounded-xl text-sm font-bold transition-colors shadow-sm">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z">
+                    </path>
+                </svg>
+                分享給朋友
+            </button>
+        </div>
+    </div>
+
+    <!-- 主要內容區 -->
+    <div class="max-w-7xl w-full mx-auto flex-1 flex flex-col lg:overflow-hidden">
+        <header class="mb-3 lg:mb-4 shrink-0">
+            <!-- 標題與副標題區塊 -->
+            <div class="text-center md:text-left flex flex-col md:flex-row md:items-baseline md:justify-between">
+                <h1 class="text-xl md:text-2xl font-bold text-brand-900 tracking-tight">
+                    信用貸款計算機
+                </h1>
+                <p class="text-slate-500 text-xs md:text-sm mt-1 md:mt-0 md:ml-4">
+                    獲取資金的成本一目瞭然
+                </p>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 flex-1 lg:overflow-hidden lg:min-h-0">
+            <!-- 左側：輸入控制面板 -->
+            <div
+                class="lg:col-span-4 space-y-3 bg-white p-3 lg:p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col lg:overflow-y-auto">
+                <h2 class="text-base font-bold text-slate-800 flex items-center mb-1 shrink-0">
+                    <svg class="w-5 h-5 mr-2 text-brand-500 animate-pulse" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4">
+                        </path>
+                    </svg>
+                    貸款合約變數設定
+                </h2>
+
+                <div class="space-y-1">
+                    <div class="flex justify-between text-xs font-semibold text-slate-700">
+                        <label>貸款總額 (元)</label>
+                        <span id="amountDisplay" class="text-brand-600 font-bold">600,000</span>
+                    </div>
+                    <div class="flex gap-2 items-center">
+                        <input type="number" id="inputAmount" value="600000"
+                            class="w-32 p-1 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 font-bold text-slate-700 text-center" />
+                        <div class="flex-1">
+                            <input type="range" id="sliderAmount" min="100000" max="3000000" step="10000" value="600000"
+                                class="range-slider" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-1">
+                    <div class="flex justify-between text-xs font-semibold text-slate-700">
+                        <label>年利率 (%)</label>
+                        <span id="rateDisplay" class="text-brand-600 font-bold">3.50%</span>
+                    </div>
+                    <div class="flex gap-2 items-center">
+                        <input type="number" id="inputRate" value="3.5" step="0.01"
+                            class="w-32 p-1 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 font-bold text-slate-700 text-center" />
+                        <div class="flex-1">
+                            <input type="range" id="sliderRate" min="0.5" max="15" step="0.1" value="3.5"
+                                class="range-slider" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-1">
+                    <div class="flex justify-between text-xs font-semibold text-slate-700">
+                        <label>銀行開辦費/手續費 (元)</label>
+                        <span id="feeDisplay" class="text-brand-600 font-bold">5,000</span>
+                    </div>
+                    <input type="number" id="inputFee" value="5000"
+                        class="w-full p-1 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 font-bold text-slate-700 text-center" />
+                </div>
+
+                <div class="h-px bg-slate-200 w-full my-2 shrink-0"></div>
+
+                <!-- 初始還款年限 -->
+                <div class="space-y-1">
+                    <div class="flex justify-between text-xs font-semibold text-slate-700">
+                        <label>初始還款年限 (1~10年)</label>
+                        <span id="initialTermDisplay" class="text-brand-600 font-bold">5 年</span>
+                    </div>
+                    <input type="range" id="sliderInitialTerm" min="1" max="10" step="1" value="5"
+                        class="range-slider" />
+                </div>
+
+                <!-- 綁約期 (月) -->
+                <div class="space-y-1">
+                    <label class="block text-xs font-semibold text-slate-700">綁約期 (月)</label>
+                    <select id="selectLockIn"
+                        class="w-full p-1 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 bg-white font-bold text-slate-700">
+                        <option value="12">12 個月</option>
+                        <option value="18">18 個月</option>
+                        <option value="24" selected>24 個月</option>
+                    </select>
+                </div>
+
+                <!-- 綁約後剩餘年限 -->
+                <div class="bg-blue-50/50 p-2.5 rounded-lg border border-blue-100 space-y-1">
+                    <div class="flex justify-between text-xs font-semibold text-slate-700">
+                        <label id="labelRemainingTerm">綁約期滿後，還需幾年還款？</label>
+                        <span id="remainingTermDisplay" class="text-accent-600 font-bold">3 年</span>
+                    </div>
+                    <p class="text-[10px] text-slate-400 leading-tight">
+                        註：限制綁約期+剩餘期不可大於初始年限。設為 0 即滿期結清。
+                    </p>
+                    <input type="range" id="sliderRemainingTerm" min="0" max="3" step="0.5" value="3"
+                        class="range-slider" />
+                </div>
+
+                <!-- 版權小字 -->
+                <p class="text-[10px] text-slate-400 text-center mt-auto pt-2 shrink-0">
+                    Made by Pilot Run Project 2026
+                </p>
+            </div>
+
+            <!-- 右側：結果面板與圖表 -->
+            <div class="lg:col-span-8 space-y-3 flex flex-col lg:overflow-hidden lg:min-h-0">
+                <!-- KPI 數據卡片 -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-2.5 shrink-0">
+                    <div
+                        class="bg-white p-2.5 rounded-xl shadow-sm border border-slate-100 border-l-4 border-l-brand-500 hover:shadow-md transition">
+                        <p class="text-[11px] leading-tight text-slate-500 font-semibold mb-1">
+                            綁約期月付金 (前 <span id="kpiLockInMonths">24</span> 期)
+                        </p>
+                        <p class="text-lg lg:text-xl font-bold text-slate-800 tracking-tight" id="kpiPmt1">
+                            $0
+                        </p>
+                    </div>
+                    <div
+                        class="bg-white p-2.5 rounded-xl shadow-sm border border-slate-100 border-l-4 border-l-brand-400 hover:shadow-md transition">
+                        <p class="text-[11px] leading-tight text-slate-500 font-semibold mb-1" id="kpiPmt2Label">
+                            滿約後新月付金
+                        </p>
+                        <p class="text-lg lg:text-xl font-bold text-slate-800 tracking-tight" id="kpiPmt2">
+                            $0
+                        </p>
+                    </div>
+                    <div
+                        class="bg-white p-2.5 rounded-xl shadow-sm border border-slate-100 border-l-4 border-l-rose-400 hover:shadow-md transition">
+                        <p class="text-[11px] leading-tight text-slate-500 font-semibold mb-1">
+                            綁約期內利息總額
+                        </p>
+                        <p class="text-lg lg:text-xl font-bold text-rose-600 tracking-tight" id="kpiLockInInterest">
+                            $0
+                        </p>
+                    </div>
+                    <div
+                        class="bg-white p-2.5 rounded-xl shadow-sm border border-slate-100 border-l-4 border-l-amber-400 hover:shadow-md transition">
+                        <p class="text-[11px] leading-tight text-slate-500 font-semibold mb-1">
+                            滿約後剩餘利息總額
+                        </p>
+                        <p class="text-lg lg:text-xl font-bold text-amber-600 tracking-tight" id="kpiRemainingInterest">
+                            $0
+                        </p>
+                    </div>
+                </div>
+
+                <!-- 總結算卡片 -->
+                <div
+                    class="shrink-0 bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl p-3 lg:p-3.5 text-white shadow-md flex justify-between items-center gap-4 relative overflow-hidden">
+                    <div class="absolute -right-4 -top-4 w-16 h-16 bg-white opacity-5 rounded-full blur-xl"></div>
+                    <div class="z-10">
+                        <p class="text-slate-300 text-xs mb-0.5">
+                            整筆信貸合約利息總額
+                        </p>
+                        <p class="text-xl lg:text-2xl font-bold text-white tracking-tight" id="kpiTotalInterest">
+                            $0
+                        </p>
+                    </div>
+                    <div class="h-8 w-px bg-slate-700 z-10"></div>
+                    <div class="text-right z-10">
+                        <p class="text-slate-300 text-xs mb-0.5">
+                            實質利率 (利息總額/貸款本金)
+                        </p>
+                        <p class="text-xl lg:text-2xl font-bold text-accent-500 tracking-tight" id="kpiAPR">
+                            0.00%
+                        </p>
+                    </div>
+                </div>
+
+                <!-- 圖表區塊 -->
+                <div
+                    class="bg-white p-3 lg:p-4 rounded-xl shadow-sm border border-slate-100 flex-1 flex flex-col lg:overflow-hidden lg:min-h-0">
+                    <h3 class="text-sm font-bold text-slate-800 mb-2 shrink-0">
+                        待還款總額與每月利息視覺圖
+                    </h3>
+                    <div class="relative w-full flex-1 min-h-[160px] lg:min-h-0">
+                        <canvas id="amortizationChart"></canvas>
+                    </div>
+                    <p class="text-center text-[10px] text-slate-400 mt-1.5 shrink-0">
+                        提示：游標移至圖表上方可查看單月詳細數據（剩餘本金與當期利息）
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 隱藏的截圖用戰報容器 (自動延伸高度，淺色風格) -->
+    <div id="exportContainer" style="
+                position: fixed;
+                left: -9999px;
+                top: 0;
+                width: 360px;
+                min-height: 640px;
+                background: #fdfcfb;
+                color: #2a3d45;
+                padding: 18px 20px 24px;
+                box-sizing: border-box;
+                font-family: sans-serif;
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+                z-index: -99;
+                border: 1px solid #bcac9b;
+            ">
+        <!-- Header -->
+        <div style="
+                    text-align: center;
+                    border-bottom: 2px solid #ddc9b4;
+                    padding-bottom: 8px;
+                ">
+            <h2 style="
+                        margin: 0;
+                        font-size: 22px;
+                        font-weight: 800;
+                        color: #2a3d45;
+                        letter-spacing: 0.5px;
+                    ">
+                信用貸款計算機
+            </h2>
+            <p style="
+                        margin: 4px 0 0;
+                        font-size: 13px;
+                        color: #7a6c5d;
+                        font-weight: bold;
+                    ">
+                獲取資金的成本一目瞭然
+            </p>
+        </div>
+
+        <!-- A: 貸款參數 -->
+        <div style="
+                    background: white;
+                    border-radius: 10px;
+                    padding: 12px;
+                    border: 1px solid #bcac9b;
+                    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+                ">
+            <h3 style="
+                        margin: 0 0 6px;
+                        font-size: 12px;
+                        color: #2a3d45;
+                        display: flex;
+                        align-items: center;
+                        font-weight: bold;
+                    ">
+                📋 貸款合約變數設定
+            </h3>
+            <div style="
+                        display: flex;
+                        justify-content: space-between;
+                        font-size: 12px;
+                        margin-bottom: 4px;
+                    ">
+                <span style="color: #7a6c5d">貸款總額</span><strong style="color: #2a3d45" id="expParamAmount"></strong>
+            </div>
+            <div style="
+                        display: flex;
+                        justify-content: space-between;
+                        font-size: 12px;
+                        margin-bottom: 4px;
+                    ">
+                <span style="color: #7a6c5d">綁約期間</span><strong style="color: #2a3d45" id="expParamLockIn"></strong>
+            </div>
+            <div style="
+                        display: flex;
+                        justify-content: space-between;
+                        font-size: 12px;
+                        margin-bottom: 4px;
+                    ">
+                <span style="color: #7a6c5d">年利率</span><strong style="color: #2a3d45" id="expParamRate"></strong>
+            </div>
+            <div style="
+                        display: flex;
+                        justify-content: space-between;
+                        font-size: 12px;
+                        margin-bottom: 4px;
+                    ">
+                <span style="color: #7a6c5d">初始還款年限</span><strong style="color: #2a3d45"
+                    id="expParamInitialTerm"></strong>
+            </div>
+            <div style="
+                        display: flex;
+                        justify-content: space-between;
+                        font-size: 12px;
+                    ">
+                <span style="color: #7a6c5d">滿約後剩餘年限</span><strong style="color: #2a3d45" id="expParamRemTerm"></strong>
+            </div>
+        </div>
+
+        <!-- B: 還款與成本 -->
+        <div style="
+                    background: white;
+                    border-radius: 10px;
+                    padding: 12px;
+                    border: 1px solid #bcac9b;
+                    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+                ">
+            <h3 style="
+                        margin: 0 0 6px;
+                        font-size: 12px;
+                        color: #2a3d45;
+                        display: flex;
+                        align-items: center;
+                        font-weight: bold;
+                    ">
+                💰 預估還款與總成本
+            </h3>
+            <div style="
+                        display: flex;
+                        justify-content: space-between;
+                        font-size: 12px;
+                        margin-bottom: 4px;
+                    ">
+                <span style="color: #7a6c5d">綁約期月付金</span><strong style="color: #2a3d45" id="expPmt1"></strong>
+            </div>
+            <div style="
+                        display: flex;
+                        justify-content: space-between;
+                        font-size: 12px;
+                        margin-bottom: 6px;
+                    ">
+                <span style="color: #7a6c5d" id="expPmt2Label">滿約後月付金</span><strong style="color: #2a3d45"
+                    id="expPmt2"></strong>
+            </div>
+            <div style="
+                        display: flex;
+                        justify-content: space-between;
+                        font-size: 12px;
+                        padding-top: 6px;
+                        border-top: 1px dashed #ddc9b4;
+                        margin-bottom: 4px;
+                    ">
+                <span style="color: #7a6c5d">整筆合約利息總額</span><strong style="color: #c17c74" id="expTotalInt"></strong>
+            </div>
+            <div style="
+                        display: flex;
+                        justify-content: space-between;
+                        font-size: 12px;
+                    ">
+                <span style="color: #7a6c5d">客製 APR (總利息/本金)</span><strong style="color: #2a3d45" id="expAPR"></strong>
+            </div>
+        </div>
+
+        <!-- 市場預期報酬率 -->
+        <div style="
+                    text-align: center;
+                    font-size: 12px;
+                    color: #7a6c5d;
+                    margin: 2px 0;
+                ">
+            市場預期年化報酬率:
+            <span style="color: #c17c74; font-weight: 900; font-size: 16px" id="expMarketRate"></span>
+        </div>
+
+        <!-- C & D: 策略對比 -->
+        <div style="display: flex; flex-direction: column; gap: 8px">
+            <!-- 策略一 -->
+            <div style="
+                        background: #fdfcfb;
+                        border-radius: 10px;
+                        padding: 12px;
+                        border: 1px solid #bcac9b;
+                        border-left: 5px solid #2a3d45;
+                        box-shadow: 0 1px 2px rgba(42, 61, 69, 0.05);
+                    ">
+                <div style="
+                            font-size: 12px;
+                            font-weight: bold;
+                            color: #2a3d45;
+                            margin-bottom: 4px;
+                        ">
+                    ♟️ 策略一：一次投入股市
+                </div>
+                <div style="
+                            font-size: 11px;
+                            color: #7a6c5d;
+                            margin-bottom: 6px;
+                        ">
+                    投資期間: <strong id="expD1Duration" style="color: #2a3d45"></strong>
+                </div>
+                <div style="
+                            font-size: 11px;
+                            color: #7a6c5d;
+                            margin-bottom: 2px;
+                        ">
+                    結清本息後實拿淨利
+                </div>
+                <div style="
+                            display: flex;
+                            align-items: baseline;
+                            gap: 8px;
+                            margin-bottom: 6px;
+                        ">
+                    <div style="font-size: 22px; font-weight: 900" id="expD1Net"></div>
+                    <span style="font-size: 13px; font-weight: bold" id="expD1Rate"></span>
+                </div>
+                <div style="
+                            font-size: 11px;
+                            color: #7a6c5d;
+                            margin-bottom: 2px;
+                            padding-top: 6px;
+                            border-top: 1px dashed #ddc9b4;
+                        ">
+                    期末可留在市場的資金
+                </div>
+                <div style="
+                            font-size: 16px;
+                            font-weight: 800;
+                            color: #2a3d45;
+                        " id="expD1Retained"></div>
+            </div>
+
+            <!-- 策略二 -->
+            <div style="
+                        background: #fdfcfb;
+                        border-radius: 10px;
+                        padding: 12px;
+                        border: 1px solid #bcac9b;
+                        border-left: 5px solid #7a6c5d;
+                        box-shadow: 0 1px 2px rgba(122, 108, 93, 0.05);
+                    ">
+                <div style="
+                            font-size: 12px;
+                            font-weight: bold;
+                            color: #7a6c5d;
+                            margin-bottom: 4px;
+                        ">
+                    ♞ 策略二：穩健定期定額 (零借貸)
+                </div>
+                <div style="
+                            font-size: 11px;
+                            color: #7a6c5d;
+                            margin-bottom: 2px;
+                        ">
+                    每個月投入: <strong id="expD2Monthly" style="color: #2a3d45"></strong>
+                </div>
+                <div style="
+                            font-size: 11px;
+                            color: #7a6c5d;
+                            margin-bottom: 6px;
+                        ">
+                    投資期間: <strong id="expD2Duration" style="color: #2a3d45"></strong>
+                </div>
+                <div style="
+                            font-size: 11px;
+                            color: #7a6c5d;
+                            margin-bottom: 2px;
+                        ">
+                    總純獲利
+                </div>
+                <div style="
+                            display: flex;
+                            align-items: baseline;
+                            gap: 8px;
+                            margin-bottom: 6px;
+                        ">
+                    <div style="font-size: 22px; font-weight: 900" id="expD2Net"></div>
+                    <span style="font-size: 13px; font-weight: bold" id="expD2Rate"></span>
+                </div>
+                <div style="
+                            font-size: 11px;
+                            color: #7a6c5d;
+                            margin-bottom: 2px;
+                            padding-top: 6px;
+                            border-top: 1px dashed #ddc9b4;
+                        ">
+                    期末可留在市場的資金
+                </div>
+                <div style="
+                            font-size: 16px;
+                            font-weight: 800;
+                            color: #7a6c5d;
+                        " id="expD2Retained"></div>
+            </div>
+        </div>
+
+        <!-- 警語 -->
+        <div style="
+                    margin-top: 8px;
+                    background: #fdfcfb;
+                    border: 1px solid #c17c74;
+                    border-radius: 6px;
+                    padding: 8px;
+                    font-size: 10px;
+                    color: #c17c74;
+                    line-height: 1.4;
+                ">
+            ⚠️
+            本計算結果不構成投資建議，請務必評估自身財務現金流狀況與風險承受度後再做決策。
+        </div>
+
+        <!-- Footer -->
+        <div style="
+                    text-align: center;
+                    font-size: 11px;
+                    color: #bcac9b;
+                    margin-top: 16px;
+                    padding-top: 12px;
+                    border-top: 1px dashed #ddc9b4;
+                    font-weight: 500;
+                ">
+            © Pilot Run Project 2026<br />
+            [ 信用貸款計算機 ]
+        </div>
+    </div>
+
+    <script>
+        // DOM 元素選取
+        const els = {
+            inputAmount: document.getElementById("inputAmount"),
+            sliderAmount: document.getElementById("sliderAmount"),
+            amountDisplay: document.getElementById("amountDisplay"),
+
+            inputRate: document.getElementById("inputRate"),
+            sliderRate: document.getElementById("sliderRate"),
+            rateDisplay: document.getElementById("rateDisplay"),
+
+            inputFee: document.getElementById("inputFee"),
+            feeDisplay: document.getElementById("feeDisplay"),
+
+            sliderInitialTerm: document.getElementById("sliderInitialTerm"),
+            initialTermDisplay:
+                document.getElementById("initialTermDisplay"),
+
+            selectLockIn: document.getElementById("selectLockIn"),
+
+            labelRemainingTerm:
+                document.getElementById("labelRemainingTerm"),
+            sliderRemainingTerm: document.getElementById(
+                "sliderRemainingTerm",
+            ),
+            remainingTermDisplay: document.getElementById(
+                "remainingTermDisplay",
+            ),
+
+            // KPIs
+            kpiPmt1: document.getElementById("kpiPmt1"),
+            kpiPmt2Label: document.getElementById("kpiPmt2Label"),
+            kpiPmt2: document.getElementById("kpiPmt2"),
+            kpiLockInMonths: document.getElementById("kpiLockInMonths"),
+            kpiLockInInterest: document.getElementById("kpiLockInInterest"),
+            kpiRemainingInterest: document.getElementById(
+                "kpiRemainingInterest",
+            ),
+            kpiTotalInterest: document.getElementById("kpiTotalInterest"),
+            kpiAPR: document.getElementById("kpiAPR"),
+
+            // Investment Drawer Elements
+            sliderInvRate: document.getElementById("sliderInvRate"),
+            invRateDisplay: document.getElementById("invRateDisplay"),
+            invPrincipal: document.getElementById("invPrincipal"),
+            invDuration: document.getElementById("invDuration"),
+            invCost: document.getElementById("invCost"),
+            invFutureValue: document.getElementById("invFutureValue"),
+            invNetProfit: document.getElementById("invNetProfit"),
+            invReturnRate: document.getElementById("invReturnRate"),
+            invRetainedFunds: document.getElementById("invRetainedFunds"),
+            invCumulativeRateInfo: document.getElementById(
+                "invCumulativeRateInfo",
+            ),
+
+            // DCA Elements
+            sliderDcaAmount: document.getElementById("sliderDcaAmount"),
+            inputDcaAmount: document.getElementById("inputDcaAmount"),
+            dcaPrincipal: document.getElementById("dcaPrincipal"),
+            dcaRetainedFunds: document.getElementById("dcaRetainedFunds"),
+            dcaNetProfit: document.getElementById("dcaNetProfit"),
+            dcaReturnRate: document.getElementById("dcaReturnRate"),
+
+            // Overlay & Modals
+            overlay: document.getElementById("overlay"),
+            invDrawer: document.getElementById("invDrawer"),
+            toggleDrawerBtn: document.getElementById("toggleDrawerBtn"),
+            closeDrawerBtn: document.getElementById("closeDrawerBtn"),
+            shareModal: document.getElementById("shareModal"),
+            btnShare: document.getElementById("btnShare"),
+            closeShareBtn: document.getElementById("closeShareBtn"),
+            shareUrlConfigInput: document.getElementById("shareUrlConfigInput"),
+            copyUrlConfigBtn: document.getElementById("copyUrlConfigBtn"),
+            shareUrlPureInput: document.getElementById("shareUrlPureInput"),
+            copyUrlPureBtn: document.getElementById("copyUrlPureBtn"),
+            btnDownloadReport: document.getElementById("btnDownloadReport"),
+        };
+
+        let myChart = null;
+
+        // 格式化金錢工具
+        const formatMoney = (num) =>
+            Math.round(num).toLocaleString("zh-TW");
+        const formatMoneySigned = (num) => {
+            const sign = num > 0 ? "+" : "";
+            const amount = Math.round(Math.abs(num)).toLocaleString(
+                "zh-TW",
+            );
+            return num < 0 ? `-$${amount}` : `${sign}$${amount}`;
+        };
+
+        // 處理年限連動約束防呆
+        function enforceTermConstraints() {
+            const initialYears = parseInt(els.sliderInitialTerm.value);
+            const lockInMonths = parseInt(els.selectLockIn.value);
+            const maxRemainingYears =
+                (initialYears * 12 - lockInMonths) / 12;
+
+            els.labelRemainingTerm.innerText = `滿約後剩餘年限 (0~${maxRemainingYears}年)`;
+            els.sliderRemainingTerm.max = maxRemainingYears;
+
+            let currentRemTerm = parseFloat(els.sliderRemainingTerm.value);
+            if (currentRemTerm > maxRemainingYears) {
+                currentRemTerm = maxRemainingYears;
+                els.sliderRemainingTerm.value = currentRemTerm;
+            }
+            els.remainingTermDisplay.innerText = `${currentRemTerm} 年`;
+        }
+
+        // 側邊欄開關邏輯
+        function toggleDrawer() {
+            const isClosed =
+                els.invDrawer.classList.contains("translate-x-full");
+            if (isClosed) {
+                els.invDrawer.classList.remove("translate-x-full");
+                els.overlay.classList.remove("hidden");
+                setTimeout(
+                    () => els.overlay.classList.remove("opacity-0"),
+                    10,
+                );
+            } else {
+                els.invDrawer.classList.add("translate-x-full");
+                els.overlay.classList.add("opacity-0");
+                setTimeout(() => {
+                    if (els.shareModal.classList.contains("hidden"))
+                        els.overlay.classList.add("hidden");
+                }, 300);
+            }
+        }
+
+        // 分享視窗開關邏輯
+        function toggleShareModal() {
+            const isClosed = els.shareModal.classList.contains("hidden");
+            if (isClosed) {
+                // 動態構建含參數的分享網址
+                const baseUrl = window.location.origin + window.location.pathname;
+                const a = parseFloat(els.inputAmount.value) || 0;
+                const r = parseFloat(els.inputRate.value) || 0;
+                const f = parseFloat(els.inputFee.value) || 0;
+                const t = parseInt(els.sliderInitialTerm.value) || 0;
+                const l = parseInt(els.selectLockIn.value) || 0;
+                const rem = parseFloat(els.sliderRemainingTerm.value) || 0;
+                const ir = parseFloat(els.sliderInvRate.value) || 0;
+                const dca = parseFloat(els.inputDcaAmount.value) || 0;
+
+                const shareUrl = `${baseUrl}?a=${a}&r=${r}&f=${f}&t=${t}&l=${l}&rem=${rem}&ir=${ir}&dca=${dca}`;
+
+                els.shareUrlConfigInput.value = shareUrl;
+                els.shareUrlPureInput.value = baseUrl;
+
+                els.shareModal.classList.remove("hidden");
+                els.overlay.classList.remove("hidden");
+                setTimeout(() => {
+                    els.overlay.classList.remove("opacity-0");
+                    els.shareModal.classList.remove("opacity-0");
+                }, 10);
+            } else {
+                els.shareModal.classList.add("opacity-0");
+                els.overlay.classList.add("opacity-0");
+                setTimeout(() => {
+                    els.shareModal.classList.add("hidden");
+                    if (
+                        els.invDrawer.classList.contains("translate-x-full")
+                    )
+                        els.overlay.classList.add("hidden");
+                }, 300);
+            }
+        }
+
+        // 複製帶有參數的網址
+        els.copyUrlConfigBtn.addEventListener("click", () => {
+            els.shareUrlConfigInput.select();
+            navigator.clipboard
+                .writeText(els.shareUrlConfigInput.value)
+                .then(() => {
+                    els.copyUrlConfigBtn.innerText = "✓ 已複製";
+                    els.copyUrlConfigBtn.classList.replace(
+                        "bg-brand-600",
+                        "bg-accent-500",
+                    );
+                    els.copyUrlConfigBtn.classList.replace(
+                        "hover:bg-brand-700",
+                        "hover:bg-accent-600",
+                    );
+                    setTimeout(() => {
+                        els.copyUrlConfigBtn.innerText = "複製網址";
+                        els.copyUrlConfigBtn.classList.replace(
+                            "bg-accent-500",
+                            "bg-brand-600",
+                        );
+                        els.copyUrlConfigBtn.classList.replace(
+                            "hover:bg-accent-600",
+                            "hover:bg-brand-700",
+                        );
+                    }, 2000);
+                })
+                .catch((err) => {
+                    console.error("複製失敗:", err);
+                    alert("複製失敗，請手動複製網址。");
+                });
+        });
+
+        // 複製純淨網址
+        els.copyUrlPureBtn.addEventListener("click", () => {
+            els.shareUrlPureInput.select();
+            navigator.clipboard
+                .writeText(els.shareUrlPureInput.value)
+                .then(() => {
+                    els.copyUrlPureBtn.innerText = "✓ 已複製";
+                    els.copyUrlPureBtn.classList.replace(
+                        "bg-slate-500",
+                        "bg-accent-500",
+                    );
+                    els.copyUrlPureBtn.classList.replace(
+                        "hover:bg-slate-600",
+                        "hover:bg-accent-600",
+                    );
+                    setTimeout(() => {
+                        els.copyUrlPureBtn.innerText = "複製網址";
+                        els.copyUrlPureBtn.classList.replace(
+                            "bg-accent-500",
+                            "bg-slate-500",
+                        );
+                        els.copyUrlPureBtn.classList.replace(
+                            "hover:bg-accent-600",
+                            "hover:bg-slate-600",
+                        );
+                    }, 2000);
+                })
+                .catch((err) => {
+                    console.error("複製失敗:", err);
+                    alert("複製失敗，請手動複製網址。");
+                });
+        });
+
+        // 圖片下載邏輯
+        els.btnDownloadReport.addEventListener("click", async () => {
+            // 變更按鈕狀態
+            const originalText = els.btnDownloadReport.innerHTML;
+            els.btnDownloadReport.innerHTML =
+                '<svg class="animate-spin w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> 產出中...';
+            els.btnDownloadReport.disabled = true;
+
+            try {
+                // A. 貸款參數
+                document.getElementById("expParamAmount").innerText =
+                    els.amountDisplay.innerText;
+                document.getElementById("expParamLockIn").innerText =
+                    els.selectLockIn.value + " 個月";
+                document.getElementById("expParamRate").innerText =
+                    els.rateDisplay.innerText;
+                document.getElementById("expParamInitialTerm").innerText =
+                    els.initialTermDisplay.innerText;
+                document.getElementById("expParamRemTerm").innerText =
+                    els.remainingTermDisplay.innerText;
+
+                // B. 還款與成本
+                document.getElementById("expPmt1").innerText =
+                    els.kpiPmt1.innerText;
+                document.getElementById("expPmt2Label").innerText =
+                    els.kpiPmt2Label.innerText;
+                document.getElementById("expPmt2").innerText =
+                    els.kpiPmt2.innerText;
+                document.getElementById("expTotalInt").innerText =
+                    els.kpiTotalInterest.innerText;
+                document.getElementById("expAPR").innerText =
+                    els.kpiAPR.innerText;
+
+                // C. 市場預期報酬率
+                document.getElementById("expMarketRate").innerText =
+                    els.invRateDisplay.innerText;
+
+                // D. 策略一
+                document.getElementById("expD1Duration").innerText =
+                    els.invDuration.innerText;
+                const net1 = els.invNetProfit.innerText;
+                const rate1 = els.invReturnRate.innerText;
+                const ret1 = els.invRetainedFunds.innerText;
+                document.getElementById("expD1Net").innerText = net1;
+                document.getElementById("expD1Rate").innerText = rate1;
+                document.getElementById("expD1Retained").innerText = ret1;
+
+                if (net1.includes("-")) {
+                    document.getElementById("expD1Net").style.color =
+                        "#c17c74";
+                    document.getElementById("expD1Rate").style.color =
+                        "#c17c74";
+                } else {
+                    document.getElementById("expD1Net").style.color =
+                        "#2a3d45";
+                    document.getElementById("expD1Rate").style.color =
+                        "#2a3d45";
+                }
+
+                // E. 策略二
+                document.getElementById("expD2Monthly").innerText =
+                    "$" + formatMoney(parseFloat(els.inputDcaAmount.value));
+                document.getElementById("expD2Duration").innerText =
+                    els.invDuration.innerText;
+                const net2 = els.dcaNetProfit.innerText;
+                const rate2 = els.dcaReturnRate.innerText;
+                const ret2 = els.dcaRetainedFunds.innerText;
+                document.getElementById("expD2Net").innerText = net2;
+                document.getElementById("expD2Rate").innerText = rate2;
+                document.getElementById("expD2Retained").innerText = ret2;
+
+                if (net2.includes("-")) {
+                    document.getElementById("expD2Net").style.color =
+                        "#c17c74";
+                    document.getElementById("expD2Rate").style.color =
+                        "#c17c74";
+                } else {
+                    document.getElementById("expD2Net").style.color =
+                        "#7a6c5d";
+                    document.getElementById("expD2Rate").style.color =
+                        "#7a6c5d";
+                }
+
+                const exportContainer =
+                    document.getElementById("exportContainer");
+                const canvas = await html2canvas(exportContainer, {
+                    scale: 2,
+                    backgroundColor: "#fdfcfb",
+                    logging: false,
+                });
+
+                const imgData = canvas.toDataURL("image/png");
+                const link = document.createElement("a");
+                link.download = `Pilot_Run_結果_${new Date().getTime()}.png`;
+                link.href = imgData;
+                link.click();
+            } catch (error) {
+                console.error("生成圖片失敗:", error);
+                alert("圖片生成失敗，請檢查瀏覽器設定或稍後再試。");
+            } finally {
+                els.btnDownloadReport.innerHTML = originalText;
+                els.btnDownloadReport.disabled = false;
+            }
+        });
+
+        els.toggleDrawerBtn.addEventListener("click", toggleDrawer);
+        els.closeDrawerBtn.addEventListener("click", toggleDrawer);
+        els.btnShare.addEventListener("click", toggleShareModal);
+        els.closeShareBtn.addEventListener("click", toggleShareModal);
+        els.overlay.addEventListener("click", () => {
+            if (!els.invDrawer.classList.contains("translate-x-full"))
+                toggleDrawer();
+            if (!els.shareModal.classList.contains("hidden"))
+                toggleShareModal();
+        });
+
+        // 投資獲利結算邏輯
+        function updateInvestment(
+            principal,
+            totalInterest,
+            lockInMonths,
+            remainingYears,
+        ) {
+            const invRatePercentage = parseFloat(els.sliderInvRate.value);
+            const invRate = invRatePercentage / 100;
+            els.invRateDisplay.innerText = `${invRatePercentage > 0 ? "+" : ""}${invRatePercentage}%`;
+            els.invRateDisplay.className = `text-lg font-bold ${invRatePercentage >= 0 ? "text-brand-600" : "text-rose-600"}`;
+
+            const durationYears = lockInMonths / 12 + remainingYears;
+            els.invDuration.innerText = `${durationYears.toFixed(1).replace(".0", "")} 年`;
+
+            const fee = parseFloat(els.inputFee.value) || 0;
+            const totalCost = totalInterest + fee;
+
+            // === 策略一 ===
+            const futureValue =
+                principal * Math.pow(1 + invRate, durationYears);
+            const cumulativeRate =
+                (Math.pow(1 + invRate, durationYears) - 1) * 100;
+            if (els.invCumulativeRateInfo) {
+                els.invCumulativeRateInfo.innerText = `※ 註：年化 ${invRatePercentage}% 經過 ${durationYears.toFixed(1).replace(".0", "")} 年複利，期間累積總報酬率為 ${cumulativeRate > 0 ? "+" : ""}${cumulativeRate.toFixed(2)}%`;
+            }
+
+            const netProfit = futureValue - principal - totalCost;
+            const netReturnRate =
+                principal > 0 ? (netProfit / principal) * 100 : 0;
+
+            els.invPrincipal.innerText = `$${formatMoney(principal)}`;
+            els.invCost.innerText = `$${formatMoney(totalCost)}`;
+            els.invFutureValue.innerText = `$${formatMoney(futureValue)}`;
+
+            els.invNetProfit.innerText = formatMoneySigned(netProfit);
+            els.invNetProfit.className = `text-2xl font-bold transition-colors tracking-tight ${netProfit >= 0 ? "text-blue-600" : "text-rose-600"}`;
+
+            els.invReturnRate.innerText = `(${netReturnRate > 0 ? "+" : ""}${netReturnRate.toFixed(2)}%)`;
+            els.invReturnRate.className = `text-xs font-bold ${netReturnRate >= 0 ? "text-blue-500" : "text-rose-500"}`;
+
+            els.invRetainedFunds.innerText = formatMoneySigned(netProfit);
+            els.invRetainedFunds.className = `text-3xl font-black tracking-tight relative z-10 ${netProfit >= 0 ? "text-blue-400" : "text-rose-400"}`;
+
+            // === 策略二 ===
+            const dcaMonthly = parseFloat(els.inputDcaAmount.value) || 0;
+            const totalMonths = Math.round(durationYears * 12);
+            const monthlyRate = invRate / 12;
+
+            let dcaTotalPrincipal = dcaMonthly * totalMonths;
+            let dcaFV = 0;
+
+            if (monthlyRate === 0) {
+                dcaFV = dcaTotalPrincipal;
+            } else {
+                dcaFV =
+                    dcaMonthly *
+                    ((Math.pow(1 + monthlyRate, totalMonths) - 1) /
+                        monthlyRate) *
+                    (1 + monthlyRate);
+            }
+
+            const dcaNet = dcaFV - dcaTotalPrincipal;
+            const dcaRate =
+                dcaTotalPrincipal > 0
+                    ? (dcaNet / dcaTotalPrincipal) * 100
+                    : 0;
+
+            els.dcaPrincipal.innerText = `$${formatMoney(dcaTotalPrincipal)}`;
+            els.dcaNetProfit.innerText = formatMoneySigned(dcaNet);
+            els.dcaNetProfit.className = `text-base font-bold transition-colors ${dcaNet >= 0 ? "text-emerald-600" : "text-rose-600"}`;
+
+            els.dcaReturnRate.innerText = `(${dcaRate > 0 ? "+" : ""}${dcaRate.toFixed(2)}%)`;
+            els.dcaReturnRate.className = `text-xs font-bold ${dcaRate >= 0 ? "text-emerald-500" : "text-rose-500"}`;
+
+            els.dcaRetainedFunds.innerText = `$${formatMoney(dcaFV)}`;
+        }
+
+        // 核心攤還計算邏輯
+        function calculateAmortization() {
+            const principal = parseFloat(els.inputAmount.value) || 0;
+            const annualRate = parseFloat(els.inputRate.value) || 0;
+            const fee = parseFloat(els.inputFee.value) || 0;
+            const initialYears = parseInt(els.sliderInitialTerm.value);
+            const lockInMonths = parseInt(els.selectLockIn.value);
+            const remainingYearsAfterLockIn = parseFloat(
+                els.sliderRemainingTerm.value,
+            );
+
+            const initialTotalMonths = initialYears * 12;
+            let actualLockInMonths = lockInMonths;
+            if (actualLockInMonths > initialTotalMonths)
+                actualLockInMonths = initialTotalMonths;
+
+            const monthlyRate = annualRate / 100 / 12;
+
+            let schedule = [];
+            let currentBalance = principal;
+
+            let lockInInterestTotal = 0;
+            let remainingInterestTotal = 0;
+            let pmt1 = 0;
+            let pmt2 = 0;
+
+            if (monthlyRate > 0) {
+                pmt1 =
+                    (currentBalance *
+                        (monthlyRate *
+                            Math.pow(
+                                1 + monthlyRate,
+                                initialTotalMonths,
+                            ))) /
+                    (Math.pow(1 + monthlyRate, initialTotalMonths) - 1);
+            } else {
+                pmt1 = currentBalance / initialTotalMonths;
+            }
+
+            for (let month = 1; month <= actualLockInMonths; month++) {
+                let interestForMonth = currentBalance * monthlyRate;
+                let principalForMonth = pmt1 - interestForMonth;
+
+                if (
+                    currentBalance - principalForMonth < 0 ||
+                    month === initialTotalMonths
+                ) {
+                    principalForMonth = currentBalance;
+                    pmt1 = principalForMonth + interestForMonth;
+                }
+
+                currentBalance -= principalForMonth;
+                lockInInterestTotal += interestForMonth;
+
+                schedule.push({
+                    month: month,
+                    phase: 1,
+                    pmt: pmt1,
+                    interest: interestForMonth,
+                    principalPaid: principalForMonth,
+                    balance: Math.max(0, currentBalance),
+                });
+            }
+
+            let balanceAtEndOfLockIn = Math.max(0, currentBalance);
+
+            if (remainingYearsAfterLockIn === 0) {
+                if (currentBalance > 0) {
+                    pmt2 = balanceAtEndOfLockIn;
+                    schedule[schedule.length - 1].note = "期末全數結清餘額";
+                    currentBalance = 0;
+                }
+            } else if (currentBalance > 0) {
+                const newRemainingMonths = Math.round(
+                    remainingYearsAfterLockIn * 12,
+                );
+                if (monthlyRate > 0) {
+                    pmt2 =
+                        (currentBalance *
+                            (monthlyRate *
+                                Math.pow(
+                                    1 + monthlyRate,
+                                    newRemainingMonths,
+                                ))) /
+                        (Math.pow(1 + monthlyRate, newRemainingMonths) - 1);
+                } else {
+                    pmt2 = currentBalance / newRemainingMonths;
+                }
+
+                for (let month = 1; month <= newRemainingMonths; month++) {
+                    let interestForMonth = currentBalance * monthlyRate;
+                    let principalForMonth = pmt2 - interestForMonth;
+
+                    if (
+                        currentBalance - principalForMonth < 0 ||
+                        month === newRemainingMonths
+                    ) {
+                        principalForMonth = currentBalance;
+                        pmt2 = principalForMonth + interestForMonth;
+                    }
+
+                    currentBalance -= principalForMonth;
+                    remainingInterestTotal += interestForMonth;
+
+                    schedule.push({
+                        month: actualLockInMonths + month,
+                        phase: 2,
+                        pmt: pmt2,
+                        interest: interestForMonth,
+                        principalPaid: principalForMonth,
+                        balance: Math.max(0, currentBalance),
+                    });
+                }
+            }
+
+            const totalInterest =
+                lockInInterestTotal + remainingInterestTotal;
+            const userDefinedAPR =
+                ((totalInterest + fee) / principal) * 100;
+
+            updateUI(
+                pmt1,
+                pmt2,
+                lockInInterestTotal,
+                remainingInterestTotal,
+                totalInterest,
+                userDefinedAPR,
+                actualLockInMonths,
+                remainingYearsAfterLockIn,
+            );
+            renderChart(schedule);
+            updateInvestment(
+                principal,
+                totalInterest,
+                actualLockInMonths,
+                remainingYearsAfterLockIn,
+            );
+        }
+
+
+        function updateUI(
+            pmt1,
+            pmt2,
+            lockInInterest,
+            remainInterest,
+            totalInterest,
+            apr,
+            lockInM,
+            remY,
+        ) {
+            els.kpiPmt1.innerText = `$${formatMoney(pmt1)}`;
+            if (remY === 0) {
+                els.kpiPmt2Label.innerText = "滿約一次結清總額";
+                els.kpiPmt2.innerText = `$${formatMoney(pmt2)}`;
+            } else {
+                els.kpiPmt2Label.innerText = "滿約後新月付金";
+                els.kpiPmt2.innerText = `$${formatMoney(pmt2)}`;
+            }
+            els.kpiLockInMonths.innerText = lockInM;
+            els.kpiLockInInterest.innerText = `$${formatMoney(lockInInterest)}`;
+            els.kpiRemainingInterest.innerText = `$${formatMoney(remainInterest)}`;
+            els.kpiTotalInterest.innerText = `$${formatMoney(totalInterest)}`;
+            els.kpiAPR.innerText = `${apr.toFixed(2)}%`;
+        }
+
+        function renderChart(scheduleData) {
+            const ctx = document
+                .getElementById("amortizationChart")
+                .getContext("2d");
+            const labels = scheduleData.map((d) => `第 ${d.month} 期`);
+            const balances = scheduleData.map((d) => d.balance);
+            const interests = scheduleData.map((d) => d.interest);
+
+            const gradientSlate = ctx.createLinearGradient(0, 0, 0, 400);
+            gradientSlate.addColorStop(0, "rgba(42, 61, 69, 0.4)");
+            gradientSlate.addColorStop(1, "rgba(42, 61, 69, 0.0)");
+
+            if (myChart) myChart.destroy();
+
+            myChart = new Chart(ctx, {
+                type: "line",
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: "當期需支付利息 (右軸)",
+                            data: interests,
+                            type: "bar",
+                            backgroundColor: "#c17c74",
+                            borderRadius: 4,
+                            yAxisID: "y-interest",
+                            order: 2,
+                            barPercentage: 0.5,
+                        },
+                        {
+                            label: "該月剩餘本金 (左軸)",
+                            data: balances,
+                            type: "line",
+                            borderColor: "#2a3d45",
+                            backgroundColor: gradientSlate,
+                            borderWidth: 3,
+                            pointRadius: 0,
+                            pointHoverRadius: 6,
+                            fill: true,
+                            tension: 0.4,
+                            yAxisID: "y-balance",
+                            order: 1,
+                        },
+                    ],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: "index", intersect: false },
+                    plugins: {
+                        legend: {
+                            position: "top",
+                            labels: { usePointStyle: true, boxWidth: 8 },
+                        },
+                        tooltip: {
+                            backgroundColor: "rgba(15, 23, 42, 0.9)",
+                            titleFont: { size: 14, family: "Inter" },
+                            bodyFont: { size: 14, family: "Inter" },
+                            padding: 12,
+                            callbacks: {
+                                label: function (context) {
+                                    let label = context.dataset.label
+                                        ? context.dataset.label.split(
+                                            " ",
+                                        )[0] + ": "
+                                        : "";
+                                    if (context.parsed.y !== null)
+                                        label +=
+                                            "$" +
+                                            formatMoney(context.parsed.y);
+                                    return label;
+                                },
+                            },
+                        },
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: { maxTicksLimit: 12, color: "#64748b" },
+                        },
+                        "y-balance": {
+                            type: "linear",
+                            display: true,
+                            position: "left",
+                            title: {
+                                display: true,
+                                text: "剩餘本金 (元)",
+                                color: "#2a3d45",
+                                font: { weight: "bold" },
+                            },
+                            grid: { color: "#f1f5f9" },
+                            ticks: {
+                                color: "#64748b",
+                                callback: (value) =>
+                                    value >= 10000
+                                        ? value / 10000 + " 萬"
+                                        : value,
+                            },
+                        },
+                        "y-interest": {
+                            type: "linear",
+                            display: true,
+                            position: "right",
+                            title: {
+                                display: true,
+                                text: "支付利息 (元)",
+                                color: "#c17c74",
+                                font: { weight: "bold" },
+                            },
+                            grid: { drawOnChartArea: false },
+                            ticks: {
+                                color: "#64748b",
+                                callback: (value) =>
+                                    "$" + value.toLocaleString(),
+                            },
+                        },
+                    },
+                },
+            });
+        }
+
+        const syncInputs = (sliderEl, inputEl, displayEl, suffix = "") => {
+            const update = (val) => {
+                let v = parseFloat(val);
+                sliderEl.value = v;
+                inputEl.value = v;
+                if (displayEl) {
+                    displayEl.innerText =
+                        inputEl.id === "inputAmount" ||
+                            inputEl.id === "inputFee"
+                            ? formatMoney(v) + suffix
+                            : v + suffix;
+                }
+                calculateAmortization();
+            };
+            sliderEl.addEventListener("input", (e) =>
+                update(e.target.value),
+            );
+            inputEl.addEventListener("change", (e) => {
+                let v = parseFloat(e.target.value);
+                if (v < parseFloat(sliderEl.min)) v = sliderEl.min;
+                if (v > parseFloat(sliderEl.max)) v = sliderEl.max;
+                update(v);
+            });
+        };
+
+        syncInputs(els.sliderAmount, els.inputAmount, els.amountDisplay);
+        syncInputs(els.sliderRate, els.inputRate, els.rateDisplay, "%");
+        els.inputFee.addEventListener("change", (e) => {
+            els.feeDisplay.innerText = formatMoney(e.target.value);
+            calculateAmortization();
+        });
+
+        els.sliderInitialTerm.addEventListener("input", (e) => {
+            els.initialTermDisplay.innerText = e.target.value + " 年";
+            enforceTermConstraints();
+            calculateAmortization();
+        });
+
+        els.selectLockIn.addEventListener("change", () => {
+            enforceTermConstraints();
+            calculateAmortization();
+        });
+
+        els.sliderRemainingTerm.addEventListener("input", (e) => {
+            els.remainingTermDisplay.innerText = e.target.value + " 年";
+            calculateAmortization();
+        });
+
+        els.sliderInvRate.addEventListener("input", () => {
+            calculateAmortization();
+        });
+
+        const syncDca = (val) => {
+            let v = parseFloat(val);
+            if (v < 1000) v = 1000;
+            if (v > 100000) v = 100000;
+            els.sliderDcaAmount.value = v;
+            els.inputDcaAmount.value = v;
+            calculateAmortization();
+        };
+        els.sliderDcaAmount.addEventListener("input", (e) =>
+            syncDca(e.target.value),
+        );
+        els.inputDcaAmount.addEventListener("change", (e) =>
+            syncDca(e.target.value),
+        );
+
+        function loadParamsFromURL() {
+            const params = new URLSearchParams(window.location.search);
+
+            if (params.has("a")) {
+                const a = parseFloat(params.get("a"));
+                els.inputAmount.value = a;
+                els.sliderAmount.value = a;
+                els.amountDisplay.innerText = formatMoney(a);
+            }
+            if (params.has("r")) {
+                const r = parseFloat(params.get("r"));
+                els.inputRate.value = r;
+                els.sliderRate.value = r;
+                els.rateDisplay.innerText = r + "%";
+            }
+            if (params.has("f")) {
+                const f = parseFloat(params.get("f"));
+                els.inputFee.value = f;
+                els.feeDisplay.innerText = formatMoney(f);
+            }
+            if (params.has("t")) {
+                const t = parseInt(params.get("t"));
+                els.sliderInitialTerm.value = t;
+                els.initialTermDisplay.innerText = t + " 年";
+            }
+            if (params.has("l")) {
+                const l = parseInt(params.get("l"));
+                els.selectLockIn.value = l;
+            }
+
+            enforceTermConstraints();
+
+            if (params.has("rem")) {
+                const rem = parseFloat(params.get("rem"));
+                els.sliderRemainingTerm.value = rem;
+                els.remainingTermDisplay.innerText = rem + " 年";
+            }
+            if (params.has("ir")) {
+                const ir = parseFloat(params.get("ir"));
+                els.sliderInvRate.value = ir;
+                els.invRateDisplay.innerText = (ir > 0 ? "+" : "") + ir + "%";
+            }
+            if (params.has("dca")) {
+                const dca = parseFloat(params.get("dca"));
+                els.inputDcaAmount.value = dca;
+                els.sliderDcaAmount.value = dca;
+            }
+        }
+
+        window.onload = () => {
+            loadParamsFromURL();
+            enforceTermConstraints();
+            calculateAmortization();
+        };
+    </script>
+</body>
+
+</html>
